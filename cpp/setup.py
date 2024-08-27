@@ -8,7 +8,9 @@ PYTHIA8_LIB_DIR = "/home/leo/MadStats/MadGraph2/mg5amcnlo/HEPTools/pythia8/lib"
 PYTHON_INCLUDE_DIR = "/home/leo/miniconda3/include/python3.12"
 PYTHON_LIB_DIR = "/home/leo/miniconda3/lib"
 
-# Define the extension module
+# Define output directory
+output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../lib"))
+
 ext_modules = [
     Extension(
         'pT_particle',  # Name of the output module
@@ -36,7 +38,9 @@ setup(
     name='pT_particle',
     version='0.1',
     ext_modules=ext_modules,
-    package_dir={'': 'lib'},  # Specify the 'lib' directory as the package directory
-    packages=[''],  # Ensure that no other packages are included
+    options={
+        'build': {'build_lib': output_dir},
+        'install': {'install_lib': output_dir}
+    }
 )
 
