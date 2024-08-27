@@ -1,13 +1,14 @@
-# setup.py
 from setuptools import setup, Extension
 import pybind11
+import os
 
 # Define paths
-PYTHIA8_INCLUDE_DIR="/home/leo/MadStats/MadGraph2/mg5amcnlo/HEPTools/pythia8/include"
-PYTHIA8_LIB_DIR="/home/leo/MadStats/MadGraph2/mg5amcnlo/HEPTools/pythia8/lib"
-PYTHON_INCLUDE_DIR="/home/leo/miniconda3/include/python3.12"
-PYTHON_LIB_DIR="/home/leo/miniconda3/lib"
+PYTHIA8_INCLUDE_DIR = "/home/leo/MadStats/MadGraph2/mg5amcnlo/HEPTools/pythia8/include"
+PYTHIA8_LIB_DIR = "/home/leo/MadStats/MadGraph2/mg5amcnlo/HEPTools/pythia8/lib"
+PYTHON_INCLUDE_DIR = "/home/leo/miniconda3/include/python3.12"
+PYTHON_LIB_DIR = "/home/leo/miniconda3/lib"
 
+# Define the extension module
 ext_modules = [
     Extension(
         'pT_particle',  # Name of the output module
@@ -35,4 +36,7 @@ setup(
     name='pT_particle',
     version='0.1',
     ext_modules=ext_modules,
+    package_dir={'': 'lib'},  # Specify the 'lib' directory as the package directory
+    packages=[''],  # Ensure that no other packages are included
 )
+

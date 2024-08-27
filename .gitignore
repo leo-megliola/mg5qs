@@ -1,0 +1,16 @@
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore Python bytecode files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore general checkpoint files (adjust as needed for your use case)
+checkpoints/
+*.chk
+*.checkpoint
+*.tmp
+*.bak
+*.swp
+
