@@ -13,4 +13,5 @@ checkpoints/
 *.tmp
 *.bak
 *.swp
+/output/
 
