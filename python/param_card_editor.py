@@ -10,8 +10,8 @@ class BlockEntry:
 
 class ParamCard:
     def __init__(self, path, name = 'param_card.dat'):
-        self.path = path
-        self.file_spec = path + '/' + name
+        self.path = path / 'Cards'
+        self.file_spec = self.path / name
         self.blocks = dict()
         self.decays = dict()
         with open(self.file_spec, 'r') as file:
@@ -37,7 +37,7 @@ class ParamCard:
         
     def __repr__(self):
         s = 'Abstract of Parameter Card\n'
-        s += '  ' + self.file_spec + '\n    BLOCKS:\n'
+        s += '  ' + str(self.file_spec) + '\n    BLOCKS:\n'
         for k,v in self.blocks.items():
             s += '      ' + k + ' (' + str(len(v)) + ')\n'
         s += '    DECAY (' + str(len(self.decays)) + ')\n' 
@@ -103,14 +103,13 @@ class ParamCard:
     def write(self, path = None, name = 'param_card.out', overwrite = False, no_format = ['QNUMBERS']):
         if path is None:
             path = self.path
-        outfile = path + "/" + name
+        outfile = path / name
         if (not overwrite) and os.path.exists(outfile):
             print(outfile + ' exists and overwrite is set to False')
         try:
-            with open(self.file_spec, 'r') as input, open(path + "/" + name, 'w') as output:
+            with open(self.file_spec, 'r') as input, open(path / name, 'w') as output:
                 for line in input:
                     if line.strip().startswith('#'):
-                        #output.write(line)
                         continue
                     elif line.strip().upper().startswith('BLOCK'):
                         output.write(line)
@@ -127,4 +126,4 @@ class ParamCard:
                         output.write('DECAY ' + str(key) + ' ' + "{:.6e}".format(val.v) + ' # ' + val.comment + '\n')
         finally:
             output.close()
-        print('wrote: ' + outfile)
+        print('wrote: ' + str(outfile))
