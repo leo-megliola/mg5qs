@@ -9,7 +9,7 @@ using namespace Pythia8;
 namespace py = pybind11;
 
 
-py::dict pT(py::array_t<double>& tranverse_momenta, int particle_id, int N, std::string LHE_FILE_SPEC) {  //args: int argc, char* argv[]
+py::dict pT(py::array_t<double>& tranverse_momenta, int particle_id, std::string LHE_FILE_SPEC) {  //args: int argc, char* argv[]
     py::dict return_vals;  //dict will contain verous return values
     auto t_m = tranverse_momenta.mutable_unchecked<1>();
     Pythia pythia;   //make pythia object
@@ -26,9 +26,7 @@ py::dict pT(py::array_t<double>& tranverse_momenta, int particle_id, int N, std:
     pythia.init();
 
     int taus = 0;
-    for (int iEvent = 0; iEvent < N; iEvent++) {
-        if (!pythia.next()) continue;
-        
+    while (pythia.next()) {
         for (int i=0; i < pythia.event.size(); i++) {
             if (std::abs(pythia.event[i].id()) == particle_id) {
                 Particle &tau=pythia.event[i];
@@ -38,7 +36,7 @@ py::dict pT(py::array_t<double>& tranverse_momenta, int particle_id, int N, std:
                 t_m(taus) = pT_;
                 taus++;
             }
-        } 
+        }
     }
     cout << std::endl << "TAUS: " << taus << std::endl;
     return_vals["number of particles"] = taus;
@@ -53,7 +51,6 @@ PYBIND11_MODULE(pT_particle, m) {
           "writes to output file",
           py::arg("transverse_momenta").noconvert(),
           py::arg("particle_id"),
-          py::arg("N"),
           py::arg("LHE_FILE_SPEC")
           );
 }

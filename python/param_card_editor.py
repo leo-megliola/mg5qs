@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import shutil
 
 class BlockEntry:
     def __init__(self, v, comment):
@@ -100,17 +101,18 @@ class ParamCard:
         else:
             return ''
 
-    def write(self, path = None, name = 'param_card.out', overwrite = False, no_format = ['QNUMBERS']):
+    def write(self, path = None, target_name = 'param_card.dat', overwrite = False, no_format = ['QNUMBERS']):
         if path is None:
             path = self.path
-        outfile = path / name
+        outfile = path / target_name
         if (not overwrite) and os.path.exists(outfile):
-            print(outfile + ' exists and overwrite is set to False')
+            raise Exception(outfile + ' exists and overwrite is set to False')
         try:
-            with open(self.file_spec, 'r') as input, open(path / name, 'w') as output:
+            temp_file = self.path / 'temp.out'
+            with open(self.file_spec, 'r') as input, open(temp_file, 'w') as output:
                 for line in input:
                     if line.strip().startswith('#'):
-                        continue
+                        continue                        
                     elif line.strip().upper().startswith('BLOCK'):
                         output.write(line)
                         key = ParamCard.extract_block_key(line) 
@@ -126,4 +128,5 @@ class ParamCard:
                         output.write('DECAY ' + str(key) + ' ' + "{:.6e}".format(val.v) + ' # ' + val.comment + '\n')
         finally:
             output.close()
-        print('wrote: ' + str(outfile))
+        shutil.copy(temp_file, path / target_name)  # copy temp to target
+        os.remove(temp_file)   # cleanup artifact
