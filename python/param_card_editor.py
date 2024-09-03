@@ -52,7 +52,7 @@ class ParamCard:
             block_key = txt.split('#')[0]
         else:
             block_key = txt
-        return block_key.upper().replace('BLOCK ','').strip()
+        return block_key.upper().replace('BLOCK ','',1).strip()
     
     def get_block_entry_dict(self, tag):
         if tag == 'DECAY':
