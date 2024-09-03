@@ -3,12 +3,12 @@ from IPython.display import display
 
 def edit_card(framework_path, comment_delim='#', card_name='run_card.dat'):  # Returns list of lines in card 
     global cards_path
-    cards_path = framework_path+'Cards/'
-    with open(cards_path+card_name, 'r') as file:
+    cards_path = framework_path / 'Cards/'
+    with open(cards_path / card_name, 'r') as file:
         lines = file.readlines()
     card = [line.strip() for line in lines]
     sep_card = seperate_comments(card, comment_delim)
-    return display_card(sep_card, cards_path+card_name)
+    return display_card(sep_card, cards_path / card_name)
 
 def edit_card_spec(card_spec, comment_delim='#'): 
     with open(card_spec, 'r') as file:
