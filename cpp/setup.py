@@ -2,11 +2,11 @@ from setuptools import setup, Extension
 import pybind11
 import os
 
-# Define paths
-PYTHIA8_INCLUDE_DIR = "/home/leo/MadStats/MadGraph2/mg5amcnlo/HEPTools/pythia8/include"
-PYTHIA8_LIB_DIR = "/home/leo/MadStats/MadGraph2/mg5amcnlo/HEPTools/pythia8/lib"
-PYTHON_INCLUDE_DIR = "/home/leo/miniconda3/include/python3.12"
-PYTHON_LIB_DIR = "/home/leo/miniconda3/lib"
+# Get environment variables
+PYTHIA8_INCLUDE_DIR = os.getenv('PYTHIA8_INCLUDE_DIR')
+PYTHIA8_LIB_DIR = os.getenv('PYTHIA8_LIB_DIR')
+PYTHON_INCLUDE_DIR = os.getenv('PYTHON_INCLUDE_DIR')
+PYTHON_LIB_DIR = os.getenv('PYTHON_LIB_DIR')
 
 # Define output directory
 output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../lib"))
