@@ -11,12 +11,21 @@ mg5qs is a framework that:
 Prerequisites: 
 - Runtime environment
   - MadGraph5 (https://github.com/mg5amcnlo/mg5amcnlo) 
-  - Pythia8 (https://www.pythia.org/) 
+  - Pythia8 (https://www.pythia.org/)
 - Development environment
   - pybind11
   - essential build tools (build-essential)
   - Python development environment (python3.X-dev), version <= 3.10; 3.8 works well with Pythia
 
+Environment variables (export from ~/.bashrc):
+- Runtime environment
+    MG5QS_MG5_PATH=/path/to/mg5amcnlo
+    MG5QS_INPUT_PATH=/path/to/mg5qs/input
+- Development environment
+    PYTHIA8_INCLUDE_DIR=/path/to/pythia8/include
+    PYTHIA8_LIB_DIR=/path/to/pythia8/lib
+    PYTHON_INCLUDE_DIR=/path/to/include/python3.x
+    PYTHON_LIB_DIR=/path/to/lib (contains directory python3.x)
+
 The motivation and intended use of this project is detailed here: [link to archive]
 The full documentation for use of existing functionality can be found here: [readthedocs]
-
