@@ -16,6 +16,7 @@ Prerequisites:
   - pybind11
   - essential build tools (build-essential)
   - Python development environment (python3.X-dev), version <= 3.10; 3.8 works well with Pythia
+
 Environment variables (export from ~/.bashrc):
 - Runtime environment
     MG5QS_MG5_PATH=/path/to/mg5amcnlo
