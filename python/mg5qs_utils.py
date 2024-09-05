@@ -7,7 +7,7 @@ import os
 import shutil
 
 # A wrapper to handle interactions with pybind11 for pT_particle
-def generate_pT(particle_id, lhe_file_spec, size=100000):
+def generate_pT(particle_id, lhe_file_spec, size=5000000):
     transverse_momenta = np.zeros(size, dtype=np.float64)
     rets = pT_particle.pT(transverse_momenta, particle_id, str(lhe_file_spec))
     if rets["number of particles"] > size:

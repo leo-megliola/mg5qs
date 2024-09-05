@@ -31,10 +31,8 @@ generate p p > e- ve~ @1
 add process p p > e- ve~ j @2
 add process p p > t t~ @3
 # Output processes to MadEvent directory
-output AUTO
+output EXAMPLE
 # This will create a directory PROC_$MODELNAME_$X
 # If you want to specify the path/name of the directory use
-# output PATH
-
-# To generate events, you can go to the created directory and
-# run ./bin/generate_events
+# output /path/to/output
+# When finished editing, press the save button below
