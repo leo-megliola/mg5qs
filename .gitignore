@@ -15,4 +15,6 @@ checkpoints/
 *.swp
 /output/
 /model/
-
+/cpp/build/
+/notebook/pT_tau_runs/
+/notebook/ME5_debug
