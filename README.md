@@ -26,6 +26,3 @@ Environment variables (export from ~/.bashrc):
     PYTHIA8_LIB_DIR=/path/to/pythia8/lib
     PYTHON_INCLUDE_DIR=/path/to/include/python3.x
     PYTHON_LIB_DIR=/path/to/lib (contains directory python3.x)
-
-The motivation and intended use of this project is detailed here: [archive, WIP]
-The full documentation for use of existing functionality can be found here: [readthedocs, WIP]
