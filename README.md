@@ -19,10 +19,11 @@ Prerequisites:
 
 Environment variables (export from ~/.bashrc):
 - Runtime environment
-    MG5QS_MG5_PATH=/path/to/mg5amcnlo
-    MG5QS_INPUT_PATH=/path/to/mg5qs/input
+  - MG5QS_MG5_PATH=/path/to/mg5amcnlo
+  - MG5QS_INPUT_PATH=/path/to/mg5qs/input
 - Development environment
-    PYTHIA8_INCLUDE_DIR=/path/to/pythia8/include
-    PYTHIA8_LIB_DIR=/path/to/pythia8/lib
-    PYTHON_INCLUDE_DIR=/path/to/include/python3.x
-    PYTHON_LIB_DIR=/path/to/lib (contains directory python3.x)
+  - PYTHIA8_INCLUDE_DIR=/path/to/pythia8/include
+  - PYTHIA8_LIB_DIR=/path/to/pythia8/lib
+  - PYTHON_INCLUDE_DIR=/path/to/include/python3.x
+  - PYTHON_LIB_DIR=/path/to/lib (contains directory python3.x)
+
