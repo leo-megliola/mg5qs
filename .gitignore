@@ -18,3 +18,5 @@ checkpoints/
 /cpp/build/
 /notebook/pT_tau_runs/
 /notebook/ME5_debug
+/notebook/pTs/
+/notebook/pT_nonSM/
