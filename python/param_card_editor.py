@@ -10,9 +10,8 @@ class BlockEntry:
         return str(self.v) + " #" + self.comment
 
 class ParamCard:
-    def __init__(self, path, name = 'param_card.dat'):
-        self.path = path / 'Cards'
-        self.file_spec = self.path / name
+    def __init__(self, file_spec, quiet=False):
+        self.file_spec = file_spec
         self.blocks = dict()
         self.decays = dict()
         with open(self.file_spec, 'r') as file:
@@ -28,13 +27,15 @@ class ParamCard:
                         tokens = t.split()
                         self.decays[int(tokens[1])] = BlockEntry(tokens[2], ParamCard.get_comment(t)) 
                     except:
-                        print('cannot parse:', t)
+                        if not quiet:
+                            print('cannot parse:', t)
                 else:
                     try:
                         tokens = t.split()
                         self.blocks[block_key][int(tokens[0])] = BlockEntry(tokens[1], ParamCard.get_comment(t))
                     except:
-                        print('cannot parse:', t)
+                        if not quiet:
+                            print('cannot parse:', t)
         
     def __repr__(self):
         s = 'Abstract of Parameter Card\n'
@@ -84,9 +85,12 @@ class ParamCard:
             return
         d[k].v = v
 
-    def get_value(self, tag, k):
+    def get_value_df(self, tag, k):
         df = self.dfs()[tag]
         return df[df['key'] == k]
+
+    def get_value(self, tag, k):
+        return self.get_value_df(tag,k)['value'].iloc[0]
 
     def set_comment(self, tag, k, comment):
         d = self.get_block_entry_dict(tag)  
@@ -103,12 +107,12 @@ class ParamCard:
 
     def write(self, path = None, target_name = 'param_card.dat', overwrite = False, no_format = ['QNUMBERS']):
         if path is None:
-            path = self.path
+            path = self.file_spec.parent
         outfile = path / target_name
         if (not overwrite) and os.path.exists(outfile):
             raise Exception(outfile + ' exists and overwrite is set to False')
         try:
-            temp_file = self.path / 'temp.out'
+            temp_file = path / 'temp.out'
             with open(self.file_spec, 'r') as input, open(temp_file, 'w') as output:
                 for line in input:
                     if line.strip().startswith('#'):

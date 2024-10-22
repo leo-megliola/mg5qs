@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 import os 
 import shutil
+from param_card_editor import *
 
 # A wrapper to handle interactions with pybind11 for pT_particle
 def generate_pT(particle_id, lhe_file_spec, size=5000000):
@@ -53,11 +54,20 @@ def get_LHEs(OUTPUT_PATH):
 
 # Wraper to call generate_events excutable
 def generate_LHE(card, framework_path):
-    shutil.copy(card.path / 'param_card.dat', card.path / 'param_card.bak') # make backup
+    path = card.file_spec.parent
+    shutil.copy(card.file_spec, path / 'param_card.bak') # make backup
     card.write(overwrite=True) # write over param_card.dat
     input_path = Path(os.getenv('MG5QS_INPUT_PATH')) # gran env verr
     # Assemble and run command to generate LHE 
     command = f"{framework_path / 'bin/generate_events'} -f < {input_path / 'gen_event_input.mg5'}"
     result = subprocess.run(command, shell=True, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    shutil.copy(card.path / 'param_card.bak', card.path / 'param_card.dat')  # restore the origional card
-    os.remove(card.path / 'param_card.bak')   # cleanup artifact 
+    shutil.copy(path / 'param_card.bak', path / 'param_card.dat')  # restore the origional card
+    os.remove(path / 'param_card.bak')   # cleanup artifact 
+
+def get_run_params(LHE):
+    banner = None
+    for fname in os.listdir(LHE.parent):
+        if 'banner' in fname:
+            banner = fname
+            break
+    return ParamCard(LHE.parent / banner, quiet=True)
