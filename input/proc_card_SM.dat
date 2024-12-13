@@ -40,5 +40,5 @@ import model /home/leo/MadStats/mg5qs/model/SMEFTsim_general_MwScheme_UFO_bg
 mit_bg
 define p = u u~ c c~ d d~ s s~ b b~ g
 generate p p > ta- vt~ SMHLOOP=0 NP<=1
-output cledq__3332_SM
+output SM
 

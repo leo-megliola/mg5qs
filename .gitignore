@@ -13,6 +13,7 @@ checkpoints/
 *.tmp
 *.bak
 *.swp
+*.pkl
 /output/
 /model/
 /cpp/build/

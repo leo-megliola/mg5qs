@@ -64,10 +64,51 @@ def generate_LHE(card, framework_path):
     shutil.copy(path / 'param_card.bak', path / 'param_card.dat')  # restore the origional card
     os.remove(path / 'param_card.bak')   # cleanup artifact 
 
-def get_run_params(LHE):
+def _get_banner(LHE):
     banner = None
     for fname in os.listdir(LHE.parent):
         if 'banner' in fname:
             banner = fname
             break
+    return banner
+
+def get_run_params(LHE):
+    banner = _get_banner(LHE)
     return ParamCard(LHE.parent / banner, quiet=True)
+
+def get_LuminosityComponents(LHE):
+    N, sigma, delta_sigma = None, None, None
+    with open(LHE, 'r') as f:
+        for line in f:
+            if 'Number of Events' in line:
+                N = int(line.split(':')[1].strip())
+            elif '<init>' in line:
+                f.readline()
+                tokens = f.readline().split()
+                sigma = float(tokens[0])
+                delta_sigma = float(tokens[1])
+        if all(item is not None for item in [N, sigma, delta_sigma]):
+            return N, sigma, delta_sigma
+    raise Exception("At least one value is missing")
+
+def _weighted_average(values, uncertainties):
+    values = np.array(values)
+    uncertainties = np.array(uncertainties)
+    if values.size != uncertainties.size:
+        raise ValueError("The number of values must match the number of uncertainties.")
+    weights = 1 / uncertainties**2
+    weighted_avg = np.sum(weights * values) / np.sum(weights)
+    combined_uncertainty = np.sqrt(1 / np.sum(weights))
+    return weighted_avg, combined_uncertainty
+
+def weighted_cross_section(LHEs):
+    Ns, sigmas, delta_sigmas = [], [], []
+    for LHE in LHEs:
+        LC = get_LuminosityComponents(LHE)
+        Ns.append(LC[0])
+        sigmas.append(LC[1])
+        delta_sigmas.append(LC[2])
+    sigmas = np.array(sigmas)
+    delta_sigmas = np.array(delta_sigmas)
+    sigma, delta_sigma = _weighted_average(sigmas, delta_sigmas)
+    return np.sum(Ns), sigma, delta_sigma
