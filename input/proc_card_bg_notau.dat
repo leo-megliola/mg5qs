@@ -38,6 +38,6 @@ define vl = ve vm vt
 define vl~ = ve~ vm~ vt~
 import model /home/leo/MadStats/mg5qs/model/SMEFTsim_general_MwScheme_UFO_bg
 define p = u u~ c c~ d d~ s s~ b b~ g
-generate p p > e- ve~ SMHLOOP=0 NP<=1
+generate p p > mu- vm~ SMHLOOP=0 NP<=1
 output NO_DIRECT_TAU
 
