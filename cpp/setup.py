@@ -14,7 +14,7 @@ output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../lib"))
 ext_modules = [
     Extension(
         'pT_particle',  # Name of the output module
-        ['pT_particle.cpp'],  # Source file
+        ['status.cpp'],  # Source file
         include_dirs=[
             pybind11.get_include(),  # Pybind11 include directory
             PYTHIA8_INCLUDE_DIR,  # Pythia8 include directory

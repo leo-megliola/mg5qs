@@ -47,7 +47,7 @@ PYBIND11_MODULE(pT_particle, m) {
     m.doc() = "Module to run Pythia showering from lhe file, and capture transverse momenta of tau particles.";
     m.def("pT", 
           &pT,
-          "writes to output file",
+          "writes output to pre-alocated memory",
           py::arg("transverse_momenta").noconvert(),
           py::arg("particle_id"),
           py::arg("LHE_FILE_SPEC")
