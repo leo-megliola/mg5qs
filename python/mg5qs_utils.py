@@ -1,4 +1,4 @@
-import pT_particle
+import pythia
 import numpy as np
 import subprocess
 import time
@@ -7,10 +7,10 @@ import os
 import shutil
 from param_card_editor import *
 
-# A wrapper to handle interactions with pybind11 for pT_particle
+# A wrapper to handle interactions with pybind11 for pythia
 def generate_pT(particle_id, lhe_file_spec, size=5000000):
     transverse_momenta = np.zeros(size, dtype=np.float64)
-    rets = pT_particle.pT(transverse_momenta, particle_id, str(lhe_file_spec))
+    rets = pythia.pT(transverse_momenta, particle_id, str(lhe_file_spec))
     if rets["number of particles"] > size:
         raise ValueError('Number of particles exceeds length of data buffer: '+str(rets["number of particles"])+' > '+str(size))
     return (rets, transverse_momenta[0:rets["number of particles"]])
@@ -19,8 +19,8 @@ def generate_pT(particle_id, lhe_file_spec, size=5000000):
 #==============================temp===================================#
 def generate_vals(particle_id, lhe_file_spec, size=5000000):
     transverse_momenta = np.zeros(size, dtype=np.float64)
-    status_codes = np.zeros((11, size), dtype=np.int32)
-    rets = pT_particle.particle_info(transverse_momenta, status_codes, particle_id, str(lhe_file_spec))
+    status_codes = np.zeros((14, size), dtype=np.int32)
+    rets = pythia.particle_info(transverse_momenta, status_codes, particle_id, str(lhe_file_spec))
     if rets["number of particles"] > size:
         raise ValueError('Number of particles exceeds length of data buffer: '+str(rets["number of particles"])+' > '+str(size))
     return (rets, transverse_momenta[0:rets["number of particles"]], status_codes[:,0:rets["number of particles"]])

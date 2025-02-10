@@ -13,8 +13,8 @@ output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../lib"))
 
 ext_modules = [
     Extension(
-        'pT_particle',  # Name of the output module
-        ['status.cpp'],  # Source file
+        'pythia',  # Name of the module
+        ['pythia.cpp'],  # Source file
         include_dirs=[
             pybind11.get_include(),  # Pybind11 include directory
             PYTHIA8_INCLUDE_DIR,  # Pythia8 include directory
@@ -35,7 +35,7 @@ ext_modules = [
 ]
 
 setup(
-    name='pT_particle',
+    name='pythia',
     version='0.1',
     ext_modules=ext_modules,
     options={
