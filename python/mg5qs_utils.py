@@ -18,12 +18,12 @@ def generate_pT(particle_id, lhe_file_spec, size=5000000):
 
 #==============================temp===================================#
 def generate_vals(particle_id, lhe_file_spec, size=5000000):
-    transverse_momenta = np.zeros(size, dtype=np.float64)
-    status_codes = np.zeros((14, size), dtype=np.int32)
-    rets = pythia.particle_info(transverse_momenta, status_codes, particle_id, str(lhe_file_spec))
+    four_momentum = np.zeros((size,4), dtype=np.float64)
+    status_codes = np.zeros((size, 15), dtype=np.int32)
+    rets = pythia.particle_info(four_momentum, status_codes, particle_id, str(lhe_file_spec))
     if rets["number of particles"] > size:
         raise ValueError('Number of particles exceeds length of data buffer: '+str(rets["number of particles"])+' > '+str(size))
-    return (rets, transverse_momenta[0:rets["number of particles"]], status_codes[:,0:rets["number of particles"]])
+    return (rets, four_momentum[0:rets["number of particles"],:], status_codes[0:rets["number of particles"],:])
 #==============================temp===================================#
 
 

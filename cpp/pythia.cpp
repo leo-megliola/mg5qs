@@ -1,6 +1,7 @@
 #include "Pythia8/Pythia.h"
 #include <iostream>
 #include <vector>
+#include <set>
 #include <fstream>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
@@ -21,10 +22,11 @@ constexpr int DAUGHTER2 = 10;
 constexpr int DAUGHTER1ID = 11;
 constexpr int DAUGHTER2ID = 12;
 constexpr int DUPLICATED = 13;
+constexpr int CHAIN = 14;
 
-py::dict pT(py::array_t<double>& tranverse_momenta, int particle_id, std::string LHE_FILE_SPEC) {  //args: int argc, char* argv[]
+py::dict pT(py::array_t<double>& tranverse_momentum, int particle_id, std::string LHE_FILE_SPEC) {  //args: int argc, char* argv[]
     py::dict return_vals;  //dict will contain verous return values
-    auto t_m = tranverse_momenta.mutable_unchecked<1>();
+    auto t_m = tranverse_momentum.mutable_unchecked<1>();
     Pythia pythia;   //make pythia object
 
     // Suppress command line output
@@ -59,9 +61,10 @@ py::dict pT(py::array_t<double>& tranverse_momenta, int particle_id, std::string
 }  
 
 
-py::dict particle_info(py::array_t<double>& tranverse_momenta, py::array_t<int>& status_codes, int particle_id, std::string LHE_FILE_SPEC) {
+py::dict particle_info(py::array_t<double>& four_momentum, py::array_t<int>& status_codes, int particle_id, std::string LHE_FILE_SPEC) {
     py::dict return_vals;  //dict will contain verous return values
-    auto t_m = tranverse_momenta.mutable_unchecked<1>();
+    std::vector<std::set<int>> chains; //used to keep track of chain number
+    auto t_m = four_momentum.mutable_unchecked<2>();
     auto s_c = status_codes.mutable_unchecked<2>();
     Pythia pythia;   //make pythia object
 
@@ -78,38 +81,58 @@ py::dict particle_info(py::array_t<double>& tranverse_momenta, py::array_t<int>&
     int event = 0;
     while (pythia.next()) {
         ++event;
+        chains.clear();
         for (int i=0; i < pythia.event.size(); i++) {
             if (std::abs(pythia.event[i].id()) == particle_id) {
                 const Particle &particle=pythia.event[i];
-                s_c(EVENT, particles) = event;
-                s_c(INDEX, particles) = particle.index();
-                s_c(STATUS, particles) = particle.status();
-                s_c(ISFINAL, particles) = particle.isFinal() ? 1 : 0;
-                s_c(ISCHARGED, particles) = particle.isCharged() ? 1 : 0;
+                s_c(particles, EVENT) = event;
+                s_c(particles, INDEX) = particle.index();
+                s_c(particles, STATUS) = particle.status();
+                s_c(particles, ISFINAL) = particle.isFinal() ? 1 : 0;
+                s_c(particles, ISCHARGED) = particle.isCharged() ? 1 : 0;
                 int mother1 = particle.mother1();
                 int mother2 = particle.mother2();
-                s_c(MOTHER1, particles) = mother1;
-                s_c(MOTHER2, particles) = mother2;
-                s_c(MOTHER1ID, particles) = pythia.event[mother1].id();
-                s_c(MOTHER2ID, particles) = pythia.event[mother2].id();
+                s_c(particles, MOTHER1) = mother1;
+                s_c(particles, MOTHER2) = mother2;
+                s_c(particles, MOTHER1ID) = pythia.event[mother1].id();
+                s_c(particles, MOTHER2ID) = pythia.event[mother2].id();
                 int daughter1 = particle.daughter1();
                 int daughter2 = particle.daughter2();
-                s_c(DAUGHTER1, particles) = daughter1;
-                s_c(DAUGHTER2, particles) = daughter2;
+                s_c(particles, DAUGHTER1) = daughter1;
+                s_c(particles, DAUGHTER2) = daughter2;
                 int daughter1id = pythia.event[daughter1].id();
                 int daughter2id = pythia.event[daughter2].id();
-                s_c(DAUGHTER1ID, particles) = daughter1id;
-                s_c(DAUGHTER2ID, particles) = daughter2id;
+                s_c(particles, DAUGHTER1ID) = daughter1id;
+                s_c(particles, DAUGHTER2ID) = daughter2id;
                 bool dup = particle_id==daughter1id || particle_id==daughter2id;
-                s_c(DUPLICATED, particles) = dup ? 1 : 0;
-                t_m(particles) = particle.pT();
+                s_c(particles, DUPLICATED) = dup ? 1 : 0;
+                t_m(particles, 0) = particle.px();
+                t_m(particles, 1) = particle.py();
+                t_m(particles, 2) = particle.pz();
+                t_m(particles, 3) = particle.e();
+                // find to which chain this particle belongs
+                bool found = false;
+                for (std::size_t i=0; i<chains.size(); i++) {  
+                    if(chains[i].count(mother1) || chains[i].count(mother2)) {
+                        //add this particle to the set with its parents
+                        found = true;
+                        chains[i].insert(particle.index());
+                        s_c(particles, CHAIN) = i+1;
+                        break;
+                    }
+                } 
+                if (!found) {
+                    //particle constitutes a new chain
+                    chains.push_back({particle.index()});
+                    s_c(particles, CHAIN) = chains.size();
+                }
                 particles++;
             }
         }
     }
     return_vals["number of particles"] = particles;
     return_vals["status"] = 0;    
-    std::string fld = "EVENT,INDEX,STATUS,ISFINAL,ISCHARGED,MOTHER1,MOTHER2,MOTHER1ID,MOTHER2ID,DAUGHTER1,DAUGHTER2,DAUGHTER1ID,DAUGHTER2ID,DUPLICATED";
+    std::string fld = "EVENT,INDEX,STATUS,ISFINAL,ISCHARGED,MOTHER1,MOTHER2,MOTHER1ID,MOTHER2ID,DAUGHTER1,DAUGHTER2,DAUGHTER1ID,DAUGHTER2ID,DUPLICATED,CHAIN";
     return_vals["fields"] = fld;
     return(return_vals);
 }   
@@ -121,7 +144,7 @@ PYBIND11_MODULE(pythia, m) {  // Single module declaration
     m.def("pT", 
           &pT,
           "Writes output to pre-allocated memory",
-          py::arg("transverse_momenta").noconvert(),
+          py::arg("transverse_momentum").noconvert(),
           py::arg("particle_id"),
           py::arg("LHE_FILE_SPEC")
     );
@@ -129,7 +152,7 @@ PYBIND11_MODULE(pythia, m) {  // Single module declaration
     m.def("particle_info", 
           &particle_info,
           "Writes output to pre-allocated memory",
-          py::arg("transverse_momenta").noconvert(),
+          py::arg("four_momentum").noconvert(),
           py::arg("status_codes").noconvert(),
           py::arg("particle_id"),
           py::arg("LHE_FILE_SPEC")
