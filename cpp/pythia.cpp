@@ -23,6 +23,7 @@ constexpr int DAUGHTER1ID = 11;
 constexpr int DAUGHTER2ID = 12;
 constexpr int DUPLICATED = 13;
 constexpr int CHAIN = 14;
+constexpr int CHAININDEX = 15;
 
 py::dict pT(py::array_t<double>& tranverse_momentum, int particle_id, std::string LHE_FILE_SPEC) {  //args: int argc, char* argv[]
     py::dict return_vals;  //dict will contain verous return values
@@ -116,8 +117,9 @@ py::dict particle_info(py::array_t<double>& four_momentum, py::array_t<int>& sta
                     if(chains[i].count(mother1) || chains[i].count(mother2)) {
                         //add this particle to the set with its parents
                         found = true;
-                        chains[i].insert(particle.index());
                         s_c(particles, CHAIN) = i+1;
+                        s_c(particles, CHAININDEX) = static_cast<int>(chains[i].size());
+                        chains[i].insert(particle.index());
                         break;
                     }
                 } 
@@ -125,6 +127,7 @@ py::dict particle_info(py::array_t<double>& four_momentum, py::array_t<int>& sta
                     //particle constitutes a new chain
                     chains.push_back({particle.index()});
                     s_c(particles, CHAIN) = chains.size();
+                    s_c(particles, CHAININDEX) = 0;
                 }
                 particles++;
             }
@@ -132,7 +135,7 @@ py::dict particle_info(py::array_t<double>& four_momentum, py::array_t<int>& sta
     }
     return_vals["number of particles"] = particles;
     return_vals["status"] = 0;    
-    std::string fld = "EVENT,INDEX,STATUS,ISFINAL,ISCHARGED,MOTHER1,MOTHER2,MOTHER1ID,MOTHER2ID,DAUGHTER1,DAUGHTER2,DAUGHTER1ID,DAUGHTER2ID,DUPLICATED,CHAIN";
+    std::string fld = "EVENT,INDEX,STATUS,ISFINAL,ISCHARGED,MOTHER1,MOTHER2,MOTHER1ID,MOTHER2ID,DAUGHTER1,DAUGHTER2,DAUGHTER1ID,DAUGHTER2ID,DUPLICATED,CHAIN,CHAININDEX";
     return_vals["fields"] = fld;
     return(return_vals);
 }   
