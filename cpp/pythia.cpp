@@ -82,10 +82,18 @@ py::dict particle_info(py::array_t<double>& four_momentum, py::array_t<int>& sta
     int event = 0;
     while (pythia.next()) {
         ++event;
+        double lhe_level_pt = 0.0;
+        for(int i = 0; i < pythia.process.size(); i++) { // loop over particles in input lhe
+            const Particle& lhe_level_particle = pythia.process[i];
+            if(std::abs(lhe_level_particle.id()) == particle_id) {
+                lhe_level_pt = lhe_level_particle.pT(); //record pT of lhe-level mother
+                break; // there is only one particle of type particle_id in the hardest subprocess 
+            }
+        }
         chains.clear();
         for (int i=0; i < pythia.event.size(); i++) {
             if (std::abs(pythia.event[i].id()) == particle_id) {
-                const Particle &particle=pythia.event[i];
+                const Particle& particle=pythia.event[i];
                 s_c(particles, EVENT) = event;
                 s_c(particles, INDEX) = particle.index();
                 s_c(particles, STATUS) = particle.status();
@@ -107,10 +115,12 @@ py::dict particle_info(py::array_t<double>& four_momentum, py::array_t<int>& sta
                 s_c(particles, DAUGHTER2ID) = daughter2id;
                 bool dup = particle_id==daughter1id || particle_id==daughter2id;
                 s_c(particles, DUPLICATED) = dup ? 1 : 0;
+                
                 t_m(particles, 0) = particle.px();
                 t_m(particles, 1) = particle.py();
                 t_m(particles, 2) = particle.pz();
                 t_m(particles, 3) = particle.e();
+                t_m(particles, 4) = lhe_level_pt; 
                 // find to which chain this particle belongs
                 bool found = false;
                 for (std::size_t i=0; i<chains.size(); i++) {  

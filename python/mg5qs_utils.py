@@ -18,7 +18,7 @@ def generate_pT(particle_id, lhe_file_spec, size=5000000):
 
 #==============================temp===================================#
 def generate_vals(particle_id, lhe_file_spec, size=5000000):
-    four_momentum = np.zeros((size,4), dtype=np.float64)
+    four_momentum = np.zeros((size,5), dtype=np.float64)
     status_codes = np.zeros((size, 16), dtype=np.int32)
     rets = pythia.particle_info(four_momentum, status_codes, particle_id, str(lhe_file_spec))
     if rets["number of particles"] > size:
