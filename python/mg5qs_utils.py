@@ -1,32 +1,82 @@
 import pythia
+import pandas as pd
 import numpy as np
 import subprocess
 import time
 from pathlib import Path
 import os 
 import shutil
+import pickle
+import concurrent.futures
 from param_card_editor import *
 
-# A wrapper to handle interactions with pybind11 for pythia
-def generate_pT(particle_id, lhe_file_spec, size=5000000):
-    transverse_momenta = np.zeros(size, dtype=np.float64)
-    rets = pythia.pT(transverse_momenta, particle_id, str(lhe_file_spec))
-    if rets["number of particles"] > size:
+# ==============================================================================================================================
+# New API
+#
+TOPICS = 'LHE, PARENT, P_mu, CHAIN'
+TOPIC_WIDTHS = {'BASIC': 7, 'PARENT': 8, 'CHAIN': 3}
+
+def run_pythia(particle_ids, lhe_file_spec, topics=TOPICS, dataframe=True, size=5000000):
+    if 'P_mu' in topics:
+        fvs = np.zeros((size,4), dtype=np.float64)
+    else:
+        fvs = np.zeros((0,0), dtype=np.float64)
+    width = TOPIC_WIDTHS['BASIC']
+    for k,v in TOPIC_WIDTHS.items():
+        if k in topics:
+            width += v
+    ivs = np.zeros((size, width), dtype=np.int32)
+    pids = np.array(particle_ids, dtype=np.int32)
+    rets = pythia.pythia8(fvs, ivs, pids, topics, str(lhe_file_spec))
+    if rets['n'] > size:
         raise ValueError('Number of particles exceeds length of data buffer: '+str(rets["number of particles"])+' > '+str(size))
-    return (rets, transverse_momenta[0:rets["number of particles"]])
+    df = pd.DataFrame(ivs[0:rets['n']])
+    if dataframe:
+        if 'P_mu' in topics:
+            df_P = pd.DataFrame(fvs[0:rets['n']])
+            df = pd.concat((df,df_P), axis=1)
+        df.columns = rets['fields'].split(',')
+        return df
+    return {'fvs': fvs[0:rets['n']],'ivs': ivs[0:rets['n']]} | rets
 
+def process_LHE(n, LHE, particle_ids, topics, dataframe, output_path, framework_name):
+    df = run_pythia(particle_ids, LHE, topics=topics, dataframe=dataframe)
+    params = get_run_params(LHE)
+    fname = f"{framework_name}_SM_{n}.pkl"
+    with open(output_path / fname, 'wb') as f:
+        pickle.dump((params, df), f)
 
-#==============================temp===================================#
-def generate_vals(particle_id, lhe_file_spec, size=5000000):
-    four_momentum = np.zeros((size,5), dtype=np.float64)
-    status_codes = np.zeros((size, 16), dtype=np.int32)
-    rets = pythia.particle_info(four_momentum, status_codes, particle_id, str(lhe_file_spec))
-    if rets["number of particles"] > size:
-        raise ValueError('Number of particles exceeds length of data buffer: '+str(rets["number of particles"])+' > '+str(size))
-    return (rets, four_momentum[0:rets["number of particles"],:], status_codes[0:rets["number of particles"],:])
-#==============================temp===================================#
+def pythia_parallel(particle_ids, framework_path, output_dir, topics=TOPICS, dataframe=True, cores=10):
+    output_path = Path(output_dir)  # Output path relative to Jupyter
+    LHEs = get_LHEs(framework_path)
+    output_path.mkdir(parents=True, exist_ok=True)
+    for fname in output_path.glob('*.pkl'):
+        fname.unlink()
+    with concurrent.futures.ProcessPoolExecutor(max_workers=cores) as executor:
+        futures = {
+            executor.submit(process_LHE, i, LHE, particle_ids, topics, dataframe, output_path, framework_path.name)
+            for i, LHE in enumerate(LHEs)
+        }
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                print(f"Error in parallel execution: {e}") 
 
+def unpickle(inputdir):   
+    if isinstance(inputdir, str):
+        inputdir = Path(inputdir)
+    df = None
+    for filepath in inputdir.glob("*.pkl"):
+        with open(filepath, 'rb') as f:
+            params, df_n = pickle.load(f)
+            if df is None:
+                df = df_n
+            else:
+                df = pd.concat([df, df_n], ignore_index=True)
+    return df if df is not None else pd.DataFrame()
 
+# ==============================================================================================================================
 
 # Generates mg5 framework given a proc card
 def run_MG5(mg5_path, proc_card_path, proc_card_name='proc_card.dat'):
@@ -36,6 +86,7 @@ def run_MG5(mg5_path, proc_card_path, proc_card_name='proc_card.dat'):
         OUTPUT_PATH.mkdir()  # target working directory to spawn output in dedicated location 
     # Run mg5 with the proc card in the ouput directory 
     process = subprocess.Popen([mg5_path/'bin/mg5_aMC', proc_card_path/proc_card_name], stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=str(OUTPUT_PATH))
+    print('starting process...')
     try:
         while process.poll() is None:
             time.sleep(.1)  # Add a small delay to reduce CPU usage
@@ -44,9 +95,9 @@ def run_MG5(mg5_path, proc_card_path, proc_card_name='proc_card.dat'):
         process.stderr.close()
         process.wait()  # Ensure the process is fully terminated
 
+    print('done')
     output_name = _find(proc_card_path / proc_card_name, 'output').split()[1]
     return output_name, OUTPUT_PATH / output_name
-
 
 def _find(f_spec, begins):
     with open(f_spec, 'r') as file:
