@@ -199,9 +199,20 @@ py::dict pythia8(py::array_t<double>& fvals,
     return (return_vals);
 };
 
-PYBIND11_MODULE(pythia, m) {  // Single module declaration
+std::string get_topics() {
+    return "LHE, PARENT, P_mu, CHAIN";
+}
+
+py::dict get_topic_widths() {
+    py::dict widths;
+    widths["BASIC"] = 7;
+    widths["PARENT"] = 8;
+    widths["CHAIN"] = 3;
+    return widths;
+}
+
+PYBIND11_MODULE(pythia, m) {
     m.doc() = "Module to run Pythia showering from LHE file and capture particle information.";
-    // Define pythia8 function
     m.def("pythia8", 
           &pythia8,
           "Writes output to pre-allocated memory",
@@ -211,4 +222,10 @@ PYBIND11_MODULE(pythia, m) {  // Single module declaration
           py::arg("topics"),
           py::arg("LHE_FILE_SPEC")
     );
+    m.def("get_topics", 
+        &get_topics,
+        "Returns a string listing topics");
+    m.def("get_topic_widths", 
+          &get_topic_widths,
+          "Returns a dictionary of topic widths");
 }

@@ -13,16 +13,16 @@ from param_card_editor import *
 # ==============================================================================================================================
 # New API
 #
-TOPICS = 'LHE, PARENT, P_mu, CHAIN'
-TOPIC_WIDTHS = {'BASIC': 7, 'PARENT': 8, 'CHAIN': 3}
-
-def run_pythia(particle_ids, lhe_file_spec, topics=TOPICS, dataframe=True, size=5000000):
+def run_pythia(particle_ids, lhe_file_spec, topics=None, dataframe=True, size=5000000):
+    if topics is None:
+        topics = pythia.get_topics()
+    topic_widths = pythia.get_topic_widths()
     if 'P_mu' in topics:
         fvs = np.zeros((size,4), dtype=np.float64)
     else:
         fvs = np.zeros((0,0), dtype=np.float64)
-    width = TOPIC_WIDTHS['BASIC']
-    for k,v in TOPIC_WIDTHS.items():
+    width = topic_widths['BASIC']
+    for k,v in topic_widths.items():
         if k in topics:
             width += v
     ivs = np.zeros((size, width), dtype=np.int32)
@@ -37,7 +37,7 @@ def run_pythia(particle_ids, lhe_file_spec, topics=TOPICS, dataframe=True, size=
             df = pd.concat((df,df_P), axis=1)
         df.columns = rets['fields'].split(',')
         return df
-    return {'fvs': fvs[0:rets['n']],'ivs': ivs[0:rets['n']]} | rets
+    return {'fvs': fvs[0:rets['n']],'ivs': ivs[0:rets['n']]} | rets #WORK IN PROGRESS; need to pass through return values
 
 def process_LHE(n, LHE, particle_ids, topics, dataframe, output_path, framework_name):
     df = run_pythia(particle_ids, LHE, topics=topics, dataframe=dataframe)
@@ -46,7 +46,9 @@ def process_LHE(n, LHE, particle_ids, topics, dataframe, output_path, framework_
     with open(output_path / fname, 'wb') as f:
         pickle.dump((params, df), f)
 
-def pythia_parallel(particle_ids, framework_path, output_dir, topics=TOPICS, dataframe=True, cores=10):
+def pythia_parallel(particle_ids, framework_path, output_dir, topics=None, dataframe=True, cores=10):
+    if topics is None:
+        topics = pythia.get_topics()
     output_path = Path(output_dir)  # Output path relative to Jupyter
     LHEs = get_LHEs(framework_path)
     output_path.mkdir(parents=True, exist_ok=True)
