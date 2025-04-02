@@ -164,9 +164,10 @@ py::dict pythia8(py::array_t<double>& fvals,
     py::dict return_vals;  //dict will contain verous return values
     std::unordered_map<int, std::vector<std::set<int>>> chains; //used to keep track of chain numbers
     std::unordered_map<int, std::vector<std::set<int>>> ch_len; //used to keep track of chain lengths
-    Pythia pythia;   //make pythia object
+    Pythia pythia("",false);   //make pythia object (supress banner)
 
     // Suppress command line output
+    pythia.readString("SLHA:verbose = 0");
     pythia.readString("Print:quiet = on");     // Completely silent mode
 
     // Read from lhe file (includes all perameters)

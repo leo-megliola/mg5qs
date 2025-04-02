@@ -12,7 +12,7 @@ from param_card_editor import *
 
 # ==============================================================================================================================
 # New API
-#
+# TODO: PASS THROUGH SIZE AND HANDLE OVERFLOW IN C++
 def run_pythia(particle_ids, lhe_file_spec, topics=None, dataframe=True, size=5000000):
     if topics is None:
         topics = pythia.get_topics()
@@ -40,6 +40,7 @@ def run_pythia(particle_ids, lhe_file_spec, topics=None, dataframe=True, size=50
     return {'fvs': fvs[0:rets['n']],'ivs': ivs[0:rets['n']]} | rets #WORK IN PROGRESS; need to pass through return values
 
 def process_LHE(n, LHE, particle_ids, topics, dataframe, output_path, framework_name):
+    print(f"showering: {LHE} \n", end="")
     df = run_pythia(particle_ids, LHE, topics=topics, dataframe=dataframe)
     params = get_run_params(LHE)
     fname = f"{framework_name}_SM_{n}.pkl"
@@ -64,6 +65,7 @@ def pythia_parallel(particle_ids, framework_path, output_dir, topics=None, dataf
                 future.result()
             except Exception as e:
                 print(f"Error in parallel execution: {e}") 
+    print(f"\nfinished showering {len(LHEs)} LHE files")
 
 def unpickle(inputdir):   
     if isinstance(inputdir, str):
