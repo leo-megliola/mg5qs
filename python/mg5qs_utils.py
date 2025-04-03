@@ -10,10 +10,8 @@ import pickle
 import concurrent.futures
 from param_card_editor import *
 
-# ==============================================================================================================================
-# New API
-# TODO: PASS THROUGH SIZE AND HANDLE OVERFLOW IN C++
-def run_pythia(particle_ids, lhe_file_spec, topics=None, dataframe=True, size=5000000):
+
+def _run_pythia(particle_ids, lhe_file_spec, topics, dataframe, size):
     if topics is None:
         topics = pythia.get_topics()
     topic_widths = pythia.get_topic_widths()
@@ -28,8 +26,8 @@ def run_pythia(particle_ids, lhe_file_spec, topics=None, dataframe=True, size=50
     ivs = np.zeros((size, width), dtype=np.int32)
     pids = np.array(particle_ids, dtype=np.int32)
     rets = pythia.pythia8(fvs, ivs, pids, topics, str(lhe_file_spec))
-    if rets['n'] > size:
-        raise ValueError('Number of particles exceeds length of data buffer: '+str(rets["number of particles"])+' > '+str(size))
+    if rets['n'] == -1:
+        raise ValueError('Number of particles exceeds length of data buffer (increase buffer size?).')
     df = pd.DataFrame(ivs[0:rets['n']])
     if dataframe:
         if 'P_mu' in topics:
@@ -39,15 +37,15 @@ def run_pythia(particle_ids, lhe_file_spec, topics=None, dataframe=True, size=50
         return df
     return {'fvs': fvs[0:rets['n']],'ivs': ivs[0:rets['n']]} | rets #WORK IN PROGRESS; need to pass through return values
 
-def process_LHE(n, LHE, particle_ids, topics, dataframe, output_path, framework_name):
+def _process_LHE(n, LHE, particle_ids, topics, dataframe, output_path, framework_name, size):
     print(f"showering: {LHE} \n", end="")
-    df = run_pythia(particle_ids, LHE, topics=topics, dataframe=dataframe)
+    df = _run_pythia(particle_ids, LHE, topics, dataframe, size)
     params = get_run_params(LHE)
     fname = f"{framework_name}_SM_{n}.pkl"
     with open(output_path / fname, 'wb') as f:
         pickle.dump((params, df), f)
 
-def pythia_parallel(particle_ids, framework_path, output_dir, topics=None, dataframe=True, cores=10):
+def pythia_parallel(particle_ids, framework_path, output_dir, topics=None, dataframe=True, cores=10, size=5000000):
     if topics is None:
         topics = pythia.get_topics()
     output_path = Path(output_dir)  # Output path relative to Jupyter
@@ -57,7 +55,7 @@ def pythia_parallel(particle_ids, framework_path, output_dir, topics=None, dataf
         fname.unlink()
     with concurrent.futures.ProcessPoolExecutor(max_workers=cores) as executor:
         futures = {
-            executor.submit(process_LHE, i, LHE, particle_ids, topics, dataframe, output_path, framework_path.name)
+            executor.submit(_process_LHE, i, LHE, particle_ids, topics, dataframe, output_path, framework_path.name, size)
             for i, LHE in enumerate(LHEs)
         }
         for future in concurrent.futures.as_completed(futures):
@@ -80,8 +78,6 @@ def unpickle(inputdir):
                 df = pd.concat([df, df_n], ignore_index=True)
     return df if df is not None else pd.DataFrame()
 
-# ==============================================================================================================================
-
 # Generates mg5 framework given a proc card
 def run_MG5(mg5_path, proc_card_path, proc_card_name='proc_card.dat'):
     INPUT_PATH = Path(os.getenv('MG5QS_INPUT_PATH'))
@@ -100,10 +96,11 @@ def run_MG5(mg5_path, proc_card_path, proc_card_name='proc_card.dat'):
         process.wait()  # Ensure the process is fully terminated
 
     print('done')
-    output_name = _find(proc_card_path / proc_card_name, 'output').split()[1]
+    output_name = _find(proc_card_path / proc_card_name, 'output').split()[1] #used to construct FRAMEWORK_PATH local
     return output_name, OUTPUT_PATH / output_name
 
-def _find(f_spec, begins):
+# find line which begins with specified token
+def _find(f_spec, begins): 
     with open(f_spec, 'r') as file:
         for line in file:
             if line.strip().upper().startswith(begins.upper()):
@@ -120,7 +117,7 @@ def get_LHEs(OUTPUT_PATH):
     LHEs = _find_file(EVENTS_PATH, 'unweighted_events.lhe')
     return LHEs
 
-# Wraper to call generate_events excutable
+# Wrapper to call generate_events excutable
 def generate_LHE(card, framework_path):
     path = card.file_spec.parent
     shutil.copy(card.file_spec, path / 'param_card.bak') # make backup
@@ -132,6 +129,10 @@ def generate_LHE(card, framework_path):
     shutil.copy(path / 'param_card.bak', path / 'param_card.dat')  # restore the origional card
     os.remove(path / 'param_card.bak')   # cleanup artifact 
 
+def get_run_params(LHE):
+    banner = _get_banner(LHE)
+    return ParamCard(LHE.parent / banner, quiet=True)
+
 def _get_banner(LHE):
     banner = None
     for fname in os.listdir(LHE.parent):
@@ -140,10 +141,7 @@ def _get_banner(LHE):
             break
     return banner
 
-def get_run_params(LHE):
-    banner = _get_banner(LHE)
-    return ParamCard(LHE.parent / banner, quiet=True)
-
+# reads .lhe file to find number of events and cross section with uncertinty 
 def get_LuminosityComponents(LHE):
     N, sigma, delta_sigma = None, None, None
     with open(LHE, 'r') as f:
@@ -169,6 +167,7 @@ def _weighted_average(values, uncertainties):
     combined_uncertainty = np.sqrt(1 / np.sum(weights))
     return weighted_avg, combined_uncertainty
 
+# compute weighted cross section for list of .lhe files 
 def weighted_cross_section(LHEs):
     Ns, sigmas, delta_sigmas = [], [], []
     for LHE in LHEs:

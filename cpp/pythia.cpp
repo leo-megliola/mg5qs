@@ -41,7 +41,8 @@ void recordEvent(Pythia& pythia,
                  std::unordered_map<int, std::vector<std::set<int>>>& chains,
                  std::unordered_map<int, std::vector<std::set<int>>>& ch_len,
                  py::array_t<double> fvals,
-                 py::array_t<int> ivals) {
+                 py::array_t<int> ivals,
+                 int nmax) {
 
     chains.clear();
     ch_len.clear();
@@ -86,14 +87,14 @@ void recordEvent(Pythia& pythia,
                 fv(n, 3) = particle.e();
             }
             if (topic_mask & CHAIN_MASK) {             
-                // find to which chain this particle belongs
+                //find to which chain this particle belongs
                 int p = particle.id();
                 if (chains.find(p) == chains.end()) {
                     chains[p] = std::vector<std::set<int>>();
                     ch_len[p] = std::vector<std::set<int>>();
                 }
-                std::vector<std::set<int>>& chain = chains[p]; // use a reference (don't make a copy)
-                std::vector<std::set<int>>& ch_n  = ch_len[p]; // use a reference (don't make a copy)
+                std::vector<std::set<int>>& chain = chains[p]; //use a reference (don't make a copy)
+                std::vector<std::set<int>>& ch_n  = ch_len[p]; //use a reference (don't make a copy)
                 bool found = false;
                 for (std::size_t i=0; i<chain.size(); i++) {  
                     if(chain[i].count(particle.mother1()) || chain[i].count(particle.mother2())) {
@@ -118,14 +119,18 @@ void recordEvent(Pythia& pythia,
                 }            
             }
             n++; //n is passed by reference so value is maintained after return
+            if (n == nmax) { //check for overflow of preallocated numpy array
+                n = -1;
+                return;
+            }
         }
     }
     if (topic_mask & CHAIN_MASK) {
         for (const std::pair<const int, std::vector<std::set<int>>>& pair : ch_len) {
             const std::vector<std::set<int>>& v = pair.second;
             for (const std::set<int>& s : v) {
-                for (int n : s) {
-                    iv(n, chain_length_col) = s.size();
+                for (int i : s) {
+                    iv(i, chain_length_col) = s.size();
                 }
             }
         }
@@ -146,46 +151,53 @@ py::dict pythia8(py::array_t<double>& fvals,
                  std::string topics, 
                  std::string LHE_FILE_SPEC) {
     
-    // Particle IDs of interest
+    //particle IDs of interest
     auto pids = PIDs.mutable_unchecked<1>();
     std::set<int> pid_set; 
     for (ssize_t i = 0; i < pids.shape(0); i++) {
         pid_set.insert(pids(i));
     }
 
-    // Topics of interest
+    //topics of interest
     uint8_t topic_mask = BASIC_MASK;
     if (topics.find(LHE_TOPIC) != std::string::npos) topic_mask |= LHE_MASK;  
     if (topics.find(PARENT_TOPIC) != std::string::npos) topic_mask |= PARENT_MASK;
     if (topics.find(P_TOPIC) != std::string::npos) topic_mask |= P_MASK;
     if (topics.find(CHAIN_TOPIC) != std::string::npos) topic_mask |= CHAIN_MASK;
     
-    // Return values
+    //return values
     py::dict return_vals;  //dict will contain verous return values
     std::unordered_map<int, std::vector<std::set<int>>> chains; //used to keep track of chain numbers
     std::unordered_map<int, std::vector<std::set<int>>> ch_len; //used to keep track of chain lengths
+    
     Pythia pythia("",false);   //make pythia object (supress banner)
 
-    // Suppress command line output
+    //suppress command line output
     pythia.readString("SLHA:verbose = 0");
-    pythia.readString("Print:quiet = on");     // Completely silent mode
+    pythia.readString("Print:quiet = on");     //completely silent mode
 
-    // Read from lhe file (includes all perameters)
+    //read from lhe file (includes all perameters)
     pythia.readString("Beams:frameType = 4");  //these are the magic words; reading from lhe file
     pythia.readString("Beams:LHEF = " + LHE_FILE_SPEC); 
     pythia.readString("Random:setSeed = on");  //change the random number selection to be based on the system clock
     pythia.readString("Random:seed = 0");      //each .lhe will shower diffrently
     pythia.init();
     
-    // Record results from pythia events
+    //Record results from pythia events
     int n = 0;
     int event_n = 1;
+    auto info = fvals.request(); //get max rows allocated to numpy array
+    int nmax = static_cast<int>(info.shape[0]);
+
     while (pythia.next()) {
         if (topic_mask & LHE_MASK) {
-            recordEvent(pythia, event_n, PROCESS_ID_LHE, n, topic_mask, pythia.process, pid_set, chains, ch_len, fvals, ivals);
+            recordEvent(pythia, event_n, PROCESS_ID_LHE, n, topic_mask, pythia.process, pid_set, chains, ch_len, fvals, ivals, nmax);
         }
-        recordEvent(pythia, event_n, PROCESS_ID_PYTHIA, n, topic_mask, pythia.event, pid_set, chains, ch_len, fvals, ivals);
+        recordEvent(pythia, event_n, PROCESS_ID_PYTHIA, n, topic_mask, pythia.event, pid_set, chains, ch_len, fvals, ivals, nmax);
         event_n++;
+        if (n == -1) { //overflow of numpy array
+            break;
+        }
     }
     return_vals["n"] = n;
 
