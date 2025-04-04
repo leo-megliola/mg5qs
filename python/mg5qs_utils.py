@@ -65,10 +65,17 @@ def pythia_parallel(particle_ids, framework_path, output_dir, topics=None, dataf
                 print(f"Error in parallel execution: {e}") 
     print(f"\nfinished showering {len(LHEs)} LHE files")
 
-def unpickle(inputdir):   
+def unpickle(inputdir, concat=True):
+    if concat:
+        return _unpickle_batch(inputdir)
+    else:
+        return _unpickle_dict(inputdir)
+
+def _unpickle_batch(inputdir):   
     if isinstance(inputdir, str):
         inputdir = Path(inputdir)
     df = None
+    params = None
     for filepath in inputdir.glob("*.pkl"):
         with open(filepath, 'rb') as f:
             params, df_n = pickle.load(f)
@@ -76,7 +83,16 @@ def unpickle(inputdir):
                 df = df_n
             else:
                 df = pd.concat([df, df_n], ignore_index=True)
-    return df if df is not None else pd.DataFrame()
+    return params, df
+
+def _unpickle_dict(inputdir):   
+    if isinstance(inputdir, str):
+        inputdir = Path(inputdir)
+    kv = {}    
+    for filepath in inputdir.glob("*.pkl"):
+        with open(filepath, 'rb') as f:
+            kv[filepath.stem] = pickle.load(f)
+    return kv
 
 # Generates mg5 framework given a proc card
 def run_MG5(mg5_path, proc_card_path, proc_card_name='proc_card.dat'):
