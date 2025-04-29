@@ -1,21 +1,17 @@
 import ipywidgets as widgets
 from IPython.display import display 
+import os
 
-def edit_card(framework_path, comment_delim='#', card_name='run_card.dat'):  # Returns list of lines in card 
-    global cards_path
-    cards_path = framework_path / 'Cards/'
-    with open(cards_path / card_name, 'r') as file:
+def edit_card(input_path, comment_delim='#', card_name='run_card.dat'):  # Returns list of lines in card 
+    if os.path.isdir(input_path):
+        if not os.path.exists(input_path / card_name):
+            input_path = input_path / 'Cards/'
+            
+    with open(input_path / card_name, 'r') as file:
         lines = file.readlines()
     card = [line.strip() for line in lines]
     sep_card = seperate_comments(card, comment_delim)
-    return display_card(sep_card, cards_path / card_name)
-
-def edit_card_spec(card_spec, comment_delim='#'): 
-    with open(card_spec, 'r') as file:
-        lines = file.readlines()
-    card = [line.strip() for line in lines]
-    sep_card = seperate_comments(card, comment_delim)
-    return display_card(sep_card, card_spec)
+    return display_card(sep_card, input_path / card_name)
 
 def seperate_comments(card_by_line, delim):
     card_seperated = []
@@ -56,6 +52,3 @@ def write_card(file_path, seperated_card, output):
 
     with output:  # Use the same output widget
         print('Saved')
-
-def get_cards_path():
-    return cards_path
