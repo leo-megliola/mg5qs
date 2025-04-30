@@ -138,7 +138,7 @@ def generate_LHE(card, framework_path):
     path = card.file_spec.parent
     shutil.copy(card.file_spec, path / 'param_card.bak') # make backup
     card.write(overwrite=True) # write over param_card.dat
-    input_path = Path(os.getenv('MG5QS_INPUT_PATH')) # gran env verr
+    input_path = Path(os.getenv('MG5QS_INPUT_PATH')) # grab env verr
     # Assemble and run command to generate LHE 
     command = f"{framework_path / 'bin/generate_events'} -f < {input_path / 'gen_event_input.mg5'}"
     result = subprocess.run(command, shell=True, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
