@@ -11,6 +11,8 @@ class BlockEntry:
 
 class ParamCard:
     def __init__(self, file_spec, quiet=False):
+        if not file_spec.is_file():
+            file_spec = file_spec / 'Cards' / 'param_card.dat' 
         self.file_spec = file_spec
         self.blocks = dict()
         self.decays = dict()
