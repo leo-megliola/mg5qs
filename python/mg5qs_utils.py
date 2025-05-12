@@ -41,7 +41,7 @@ def _process_LHE(n, LHE, particle_ids, topics, dataframe, output_path, framework
     print(f"showering: {LHE} \n", end="")
     df = _run_pythia(particle_ids, LHE, topics, dataframe, size)
     params = get_run_params(LHE)
-    fname = f"{framework_name}_SM_{n}.pkl"
+    fname = f"{framework_name}_{n}.pkl"
     with open(output_path / fname, 'wb') as f:
         pickle.dump((params, df), f)
 
