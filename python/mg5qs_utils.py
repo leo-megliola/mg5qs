@@ -1,15 +1,13 @@
+from pathlib import Path
 import pythia
 import pandas as pd
 import numpy as np
 import subprocess
 import time
-from pathlib import Path
-import os 
 import shutil
 import pickle
 import concurrent.futures
 from param_card_editor import *
-
 
 def _run_pythia(particle_ids, lhe_file_spec, topics, dataframe, size):
     if topics is None:
@@ -95,13 +93,13 @@ def _unpickle_dict(inputdir):
     return kv
 
 # Generates mg5 framework given a proc card
-def run_MG5(mg5_path, proc_card_path, proc_card_name='proc_card.dat'):
-    INPUT_PATH = Path(os.getenv('MG5QS_INPUT_PATH'))
-    OUTPUT_PATH = INPUT_PATH.parent/'output'
-    if not OUTPUT_PATH.exists():
-        OUTPUT_PATH.mkdir()  # target working directory to spawn output in dedicated location 
+def run_MG5(proc_card_path, proc_card_name='proc_card.dat'):
+    mg5_path = Path(os.getenv('MG5AMCNLO'))
+    output_path = proc_card_path.parent/'output'
+    if not output_path.exists():
+        output_path.mkdir()  # target working directory to spawn output in dedicated location 
     # Run mg5 with the proc card in the ouput directory 
-    process = subprocess.Popen([mg5_path/'bin/mg5_aMC', proc_card_path/proc_card_name], stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=str(OUTPUT_PATH))
+    process = subprocess.Popen([mg5_path/'bin/mg5_aMC', proc_card_path/proc_card_name], stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=str(output_path))
     print('starting process...')
     try:
         while process.poll() is None:
@@ -113,7 +111,7 @@ def run_MG5(mg5_path, proc_card_path, proc_card_name='proc_card.dat'):
 
     print('done')
     output_name = _find(proc_card_path / proc_card_name, 'output').split()[1] #used to construct FRAMEWORK_PATH local
-    return output_name, OUTPUT_PATH / output_name
+    return output_name, output_path / output_name
 
 # find line which begins with specified token
 def _find(f_spec, begins): 
