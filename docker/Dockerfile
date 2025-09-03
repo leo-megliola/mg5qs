@@ -39,13 +39,18 @@ RUN pip3 install --no-cache-dir \
     numpy \
     pandas \
     scipy \
-    matplotlib
+    matplotlib \
+    jupyterhub-nativeauthenticator
 
 # -----------------------------
 # MadGraph installation
 # -----------------------------
-WORKDIR /opt
-RUN git clone https://github.com/mg5amcnlo/mg5amcnlo.git madgraph
+WORKDIR /opt/madgraph
+
+RUN wget https://launchpad.net/mg5amcnlo/3.0/3.6.x/+download/MG5_aMC_v3.5.9.tar.gz \
+    && tar --strip-components=1 -xvzf MG5_aMC_v3.5.9.tar.gz \
+    && rm MG5_aMC_v3.5.9.tar.gz
+
 ENV MG5AMCNLO=/opt/madgraph
 ENV MG5QS_INPUT_PATH=/opt/madgraph/input
 ENV PYTHONPATH=/opt/mg5qs/python:$PYTHONPATH
@@ -94,29 +99,3 @@ EXPOSE 8000
 # This will start JupyterHub using your specified config file
 CMD ["jupyterhub", "-f", "/etc/jupyterhub/jupyterhub_config.py"]
 
-# Create users with password
-RUN useradd -m leo && echo 'leo:leo' | chpasswd
-RUN useradd -m ben && echo 'ben:ben' | chpasswd
-RUN useradd -m dima && echo 'dima:dima' | chpasswd
-
-# Copy required files
-COPY E1.ipynb E2.ipynb E3.ipynb E4.ipynb /home/leo/
-RUN chown leo:leo /home/leo/*
-COPY E1.ipynb E2.ipynb E3.ipynb E4.ipynb /home/ben/
-RUN chown ben:ben /home/ben/*
-COPY E1.ipynb E2.ipynb E3.ipynb E4.ipynb /home/dima/
-RUN chown dima:dima /home/dima/*
-
-# Create the directory
-RUN mkdir -p /home/leo/mg5
-RUN mkdir -p /home/ben/mg5
-RUN mkdir -p /home/dima/mg5
-
-# Copy files into it (adjust source path as needed)
-COPY *.dat /home/leo/mg5/
-COPY *.dat /home/ben/mg5/
-COPY *.dat /home/dima/mg5/
-
-RUN chown -R leo:leo /home/leo/mg5
-RUN chown -R ben:ben /home/ben/mg5
-RUN chown -R dima:dima /home/dima/mg5
