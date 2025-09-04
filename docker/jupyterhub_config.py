@@ -84,7 +84,7 @@ def pre_spawn(spawner):
         os.chown(user_home, uid, gid)
 
     # create MadGraph directory
-    user_mg5_dir = user_home / 'mg5_work'
+    user_mg5_dir = user_home / 'mg5amcnlo'
     if not user_mg5_dir.exists():
         try:
             spawner.log.info(f'Copying MadGraph for user {username}...')
@@ -93,7 +93,6 @@ def pre_spawn(spawner):
             # Use subprocess to change ownership recursively, as the copy was done by root
             spawner.log.info(f'Changing ownership of {user_mg5_dir} to user {uid}...')
             subprocess.run(['chown', '-R', f'{uid}:{gid}', str(user_mg5_dir)], check=True)
-            spawner.log.info(f'Successfully changed ownership of {user_mg5_dir} to {uid}:{gid}')
         except subprocess.CalledProcessError as e:
             spawner.log.error(f'Failed to change ownership of {user_mg5_dir}: {e.stderr}')
             # Clean up the failed copy
@@ -103,6 +102,68 @@ def pre_spawn(spawner):
         except Exception as e:
             spawner.log.error(f'Failed to copy MadGraph for {username}: {e}')
             raise
+
+    # create example input files
+    user_input_dir = user_home / 'input'
+    if not user_input_dir.exists():
+        try:
+            spawner.log.info(f'Copying input files for user {username}...')
+
+            def ignore_non_dat(dir, files):
+                # keep only files that end with .dat
+                return [f for f in files if not f.endswith('.dat')]
+
+            shutil.copytree("/opt/mg5qs/docker", user_input_dir, ignore=ignore_non_dat)
+
+            spawner.log.info(f'input files copied to {user_input_dir}')
+
+            # Use subprocess to change ownership recursively, as the copy was done by root
+            spawner.log.info(f'Changing ownership of {user_input_dir} to user {uid}...')
+            subprocess.run(['chown', '-R', f'{uid}:{gid}', str(user_input_dir)], check=True)
+
+        except subprocess.CalledProcessError as e:
+            spawner.log.error(f'Failed to change ownership of {user_input_dir}: {e.stderr}')
+            # Clean up the failed copy
+            if user_input_dir.exists():
+                shutil.rmtree(user_input_dir)
+            raise
+        except Exception as e:
+            spawner.log.error(f'Failed to copy input files for {username}: {e}')
+            raise
+
+    try:
+        spawner.log.info(f'Copying example notebooks for user {username}...')
+
+        def ignore_non_ipynb(dirpath, entries):
+            # Keep only files ending in .ipynb; ignore everything else
+            return [name for name in entries if not name.endswith('.ipynb')]
+
+        # Copy from the source directory; ignore everything that's not *.ipynb.
+        # dirs_exist_ok=True allows copying into an existing home directory.
+        shutil.copytree(
+            "/opt/mg5qs/docker",
+            user_home,
+            ignore=ignore_non_ipynb,
+            dirs_exist_ok=True
+        )
+
+        spawner.log.info(f'Example notebooks copied to {user_home}')
+
+        # Fix ownership since the copy likely ran as root
+        spawner.log.info(f'Changing ownership of {user_home} to user {uid}...')
+        subprocess.run(['chown', '-R', f'{uid}:{gid}', str(user_home)], check=True)
+
+    except subprocess.CalledProcessError as e:
+        spawner.log.error(f'Failed to change ownership of {user_home}: {e.stderr}')
+        # Do NOT remove the entire home directory; just re-raise.
+        raise
+    except Exception as e:
+        spawner.log.error(f'Failed to copy example notebooks for {username}: {e}')
+        raise
+
+    
+    
+    #========================================================================
 
     # set MG5AMCNLO env to point to user's copy
     spawner.environment['MG5AMCNLO'] = str(user_mg5_dir)
