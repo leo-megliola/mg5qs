@@ -47,7 +47,7 @@ RUN pip3 install --no-cache-dir \
 # -----------------------------
 WORKDIR /opt/madgraph
 
-RUN wget https://launchpad.net/mg5amcnlo/3.0/3.6.x/+download/MG5_aMC_v3.5.9.tar.gz \
+RUN wget https://launchpad.net/mg5amcnlo/3.0/3.5.x/+download/MG5_aMC_v3.5.9.tar.gz \
     && tar --strip-components=1 -xvzf MG5_aMC_v3.5.9.tar.gz \
     && rm MG5_aMC_v3.5.9.tar.gz
 
