@@ -135,20 +135,20 @@ def pre_spawn(spawner):
     try:
         spawner.log.info(f'Copying example notebooks for user {username}...')
 
-        def ignore_non_ipynb(dirpath, entries):
-            # Keep only files ending in .ipynb; ignore everything else
-            return [name for name in entries if not name.endswith('.ipynb')]
+        def ignore_non_ipynb_md(dirpath, entries):
+            # Keep only files ending in .ipynb or .MD; ignore everything else
+            return [name for name in entries if not (name.endswith('.ipynb') or name.endswith('.md'))]
 
         # Copy from the source directory; ignore everything that's not *.ipynb.
         # dirs_exist_ok=True allows copying into an existing home directory.
         shutil.copytree(
             "/opt/mg5qs/docker",
             user_home,
-            ignore=ignore_non_ipynb,
+            ignore=ignore_non_ipynb_md,
             dirs_exist_ok=True
         )
 
-        spawner.log.info(f'Example notebooks copied to {user_home}')
+        spawner.log.info(f'Example notebooks and MD files copied to {user_home}')
 
         # Fix ownership since the copy likely ran as root
         spawner.log.info(f'Changing ownership of {user_home} to user {uid}...')
