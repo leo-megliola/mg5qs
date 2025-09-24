@@ -3,11 +3,12 @@ import nativeauthenticator
 import pwd
 import shutil
 import subprocess
+import json
 from pathlib import Path
 
 c = get_config()
 
-# use NativeAuthenticator to allow anonyumous sign-up and account creation
+# use NativeAuthenticator to allow anonymous sign-up and account creation
 c.JupyterHub.authenticator_class = 'nativeauthenticator.NativeAuthenticator'
 c.JupyterHub.template_paths = [f'{os.path.dirname(nativeauthenticator.__file__)}/templates/']
 c.NativeAuthenticator.open_signup = True
@@ -161,10 +162,50 @@ def pre_spawn(spawner):
         spawner.log.error(f'Failed to copy example notebooks for {username}: {e}')
         raise
 
+    # Configure JupyterLab settings for Markdown preview
+    try:
+        spawner.log.info(f'Setting up JupyterLab Markdown preview for user {username}...')
+        
+        # Create JupyterLab settings directory structure
+        jupyter_config_dir = user_home / '.jupyter'
+        lab_settings_dir = jupyter_config_dir / 'lab' / 'user-settings' / '@jupyterlab'
+        docmanager_dir = lab_settings_dir / 'docmanager-extension'
+        
+        # Create directories
+        docmanager_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Configure default viewers for markdown files
+        docmanager_settings = {
+            "defaultViewers": {
+                "markdown": "Markdown Preview"
+            }
+        }
+        
+        # Write the configuration file
+        docmanager_config_file = docmanager_dir / 'plugin.jupyterlab-settings'
+        with open(docmanager_config_file, 'w') as f:
+            json.dump(docmanager_settings, f, indent=2)
+        
+        # Also set up file browser settings to show markdown files properly
+        filebrowser_dir = lab_settings_dir / 'filebrowser-extension'
+        filebrowser_dir.mkdir(parents=True, exist_ok=True)
+        
+        filebrowser_settings = {
+            "showHiddenFiles": False,
+            "showFileCheckboxes": False
+        }
+        
+        filebrowser_config_file = filebrowser_dir / 'plugin.jupyterlab-settings'
+        with open(filebrowser_config_file, 'w') as f:
+            json.dump(filebrowser_settings, f, indent=2)
+        
+        # Set ownership of all jupyter config files
+        subprocess.run(['chown', '-R', f'{uid}:{gid}', str(jupyter_config_dir)], check=True)
+        spawner.log.info(f'JupyterLab Markdown preview configuration set for {username}')
+        
+    except Exception as e:
+        spawner.log.warning(f'Failed to set JupyterLab Markdown preview configuration for {username}: {e}')
     
-    
-    #========================================================================
-
     # set MG5AMCNLO env to point to user's copy
     spawner.environment['MG5AMCNLO'] = str(user_mg5_dir)
 
