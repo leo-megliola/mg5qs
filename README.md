@@ -8,6 +8,9 @@ mg5qs is a framework that:
 - provides an example of interaction directly with Pythia in C++, therefore retaining efficiency of computation and gaining in storage optimization
 - wraps Pythia/C++ in python/numpy, allowing for analysis using standard libraries (scipy, pandas, etc.) 
 
+Docker script
+- a full installation script is here: https://github.com/leo-megliola/mg5qs/blob/main/docker/Dockerfile
+
 Prerequisites: 
 - Runtime environment
   - MadGraph5 (https://github.com/mg5amcnlo/mg5amcnlo) 
