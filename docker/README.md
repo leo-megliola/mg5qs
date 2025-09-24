@@ -18,10 +18,13 @@ mg5qs offers:
 Give it a try in any of the following ways. The best way to start is by running the four interactive example notebooks on the test server.
 
 **Full Demo (Test Server)**
+
 https://lab.mg5qs.org/ make a free account (enter a username and password).
 
 **Docker (image includes MadGraph5 3.5.x & Pythia 8.310)**
+
 https://hub.docker.com/repository/docker/leomegliola/mg5qs/general. 
 
 **GitHub**
+
 https://github.com/leo-megliola/mg5qs. 
