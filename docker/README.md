@@ -23,7 +23,7 @@ https://lab.mg5qs.org/ make a free account (enter a username and password).
 
 **Docker (image includes MadGraph5 3.5.x & Pythia 8.310)**
 
-https://hub.docker.com/repository/docker/leomegliola/mg5qs/general. 
+https://hub.docker.com/r/leomegliola/mg5qs.
 
 **GitHub**
 
