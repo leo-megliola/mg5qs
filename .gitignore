@@ -14,6 +14,7 @@ checkpoints/
 *.bak
 *.swp
 *.pkl
+*.so
 /output/
 /model/
 /cpp/build/

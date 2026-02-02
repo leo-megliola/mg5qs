@@ -1,1 +1,1 @@
-These notebook images are pre-run, so you can see the intended output of the examples without a functioning environment (althouth iPyWidgets do not display properly). For clean copies of the examples, see /docker. 
+These notebook images are pre-run, so you can see the intended output of the examples without a functioning environment (althouth iPyWidgets do not display properly, and have therefore been removed). For clean copies of the examples, see /docker. 
